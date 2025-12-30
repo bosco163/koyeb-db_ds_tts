@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# 2. 安装 Node.js 20 (为了运行豆包项目)
+# 2. 安装 Node.js 20
 RUN mkdir -p /etc/apt/keyrings
 RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
 RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
@@ -31,18 +31,16 @@ WORKDIR /app/doubao
 RUN git clone https://github.com/Bitsea1/doubao-free-api.git .
 RUN yarn install
 RUN yarn run build
-# 防止端口冲突，尝试替换源码默认端口 (如果有的话)
+# 防止端口冲突，尝试替换源码默认端口
 RUN grep -rl "8000" . | xargs sed -i 's/8000/3000/g' || true
 
 # ===========================
-# 5. 部署 DeepSeek2API (Python) - 修复部分
+# 5. 部署 DeepSeek2API (Python)
 # ===========================
 WORKDIR /app/deepseek
 RUN git clone https://github.com/iidamie/deepseek2api.git .
-# 这是一个 Python 项目，使用 pip 安装依赖
 RUN pip install --no-cache-dir -r requirements.txt
-# 尝试将源码中可能的 8000 端口改为 4000 (防止跟 Nginx 冲突)
-RUN find . -name "*.py" | xargs sed -i 's/8000/4000/g' || true
+# 不再强制修改端口，直接使用其默认的 5001
 
 # ===========================
 # 6. 配置 Nginx 和 Supervisor

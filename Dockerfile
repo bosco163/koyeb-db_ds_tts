@@ -21,34 +21,30 @@ RUN apt-get update && apt-get install -y nodejs && npm install -g yarn
 # ===========================
 WORKDIR /app/tts
 RUN git clone https://github.com/travisvn/openai-edge-tts.git .
-# 安装依赖
 RUN pip install --no-cache-dir -r requirements.txt
 
 # ===========================
-# 4. 部署 Doubao Free API (Node.js)
+# 4. 部署 Doubao Free API (Node.js) - 已更换为 Bitsea1 版本
 # ===========================
 WORKDIR /app/doubao
-RUN git clone https://github.com/1994qrq/2025doubao-free-api.git .
+# --- 这里修改了仓库地址 ---
+RUN git clone https://github.com/Bitsea1/doubao-free-api.git .
 # 安装 Node 依赖并构建
 RUN yarn install
 RUN yarn run build
 
-# --- 关键：修改豆包端口 ---
-# 豆包默认监听 8000，我们需要把它改为 3000 以便给 Nginx 让路
-# 我们尝试通过环境变量 PORT=3000 控制，但为了保险，用 sed 暴力替换源码中的端口
-RUN grep -rl "8000" . | xargs sed -i 's/8000/3000/g'
+# --- 端口处理 ---
+# Bitsea1 默认端口可能是 3000 或 8000。
+# 我们尝试把源码里所有的 8000 改为 3000，防止跟 Nginx (8000) 冲突
+# 如果它本身就是 3000，这行命令也不会报错，只是不替换而已
+RUN grep -rl "8000" . | xargs sed -i 's/8000/3000/g' || true
 
 # ===========================
 # 5. 配置 Nginx 和 Supervisor
 # ===========================
-# 切换回根目录复制配置
 WORKDIR /app
-# 假设 nginx.conf 和 supervisord.conf 在仓库根目录
 COPY nginx.conf /etc/nginx/sites-available/default
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
-# 方便调试：列出所有文件结构，这样如果出错看日志能知道文件在哪
-RUN echo "Listing directories for debug:" && ls -R /app
 
 # 环境变量
 ENV PORT=8000

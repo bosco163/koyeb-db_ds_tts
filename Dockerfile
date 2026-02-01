@@ -1,3 +1,4 @@
+
 FROM python:3.10-slim
 
 # 1. 安装基础工具
@@ -34,15 +35,12 @@ RUN yarn run build
 RUN grep -rl "8000" . | xargs sed -i 's/8000/3000/g' || true
 
 # ===========================
-# 5. 部署 DeepSeek Free API (Node.js)
+# 5. 部署 DeepSeek2API (Python)
 # ===========================
 WORKDIR /app/deepseek
-RUN git clone https://github.com/LLM-Red-Team/deepseek-free-api.git .
-RUN yarn install
-# 修改默认端口为 5002，避免与 nginx 冲突
-RUN sed -i 's/8000/5002/g' package.json || true
-# 如果有其他配置文件也修改端口
-RUN find . -type f -name "*.js" -o -name "*.json" -o -name "*.config.js" | xargs grep -l "8000" | xargs sed -i 's/8000/5002/g' 2>/dev/null || true
+RUN git clone https://github.com/iidamie/deepseek2api.git .
+RUN pip install --no-cache-dir -r requirements.txt
+# 不再强制修改端口，直接使用其默认的 5001
 
 # ===========================
 # 6. 配置 Nginx 和 Supervisor
